@@ -1,0 +1,32 @@
+# =========================
+# Data & Outputs (NEVER COMMIT)
+# =========================
+data/
+logs/
+outputs/
+
+# =========================
+# Notebooks (exclude personal / sandbox)
+# =========================
+.ipynb_checkpoints/
+Notebooks/Personal Notebook.ipynb
+Notebooks/notebook for upload.py
+Notebooks/sandbox.ipynb
+
+# =========================
+# Scripts to exclude
+# =========================
+scripts/run_screener.py
+scripts/secfsn_daily.py
+
+# =========================
+# Python
+# =========================
+__pycache__/
+*.pyc
+
+# =========================
+# OS / Environment
+# =========================
+.DS_Store
+.env
