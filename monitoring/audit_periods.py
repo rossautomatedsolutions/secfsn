@@ -37,6 +37,14 @@ def _iter_period_dirs(data_dir: Path) -> Iterable[Tuple[Period, Path]]:
             quarter = int(parts[1])
         except ValueError:
             continue
+
+        # Exclude monthly folders that are now zero-padded (e.g. 2024_01).
+        if len(parts[1]) == 2 and parts[1].startswith("0"):
+            continue
+
+        if quarter < 1 or quarter > 4:
+            continue
+
         yield (year, quarter), child
 
 

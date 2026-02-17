@@ -51,6 +51,7 @@ def convert_period_tsv_to_parquet(period_dir: Path):
 
         parquet_path = parquet_dir / f"{table}.parquet"
 
+        converted = False
         try:
             logger.info(f"Reading TSV: {tsv_path}")
             df = pd.read_csv(
@@ -63,11 +64,12 @@ def convert_period_tsv_to_parquet(period_dir: Path):
             )
             logger.info(f"Writing parquet: {parquet_path}")
             df.to_parquet(parquet_path, index=False)
+            converted = True
         except Exception as e:
             logger.warning(f"Error converting {tsv_path} to parquet: {e}")
             continue
-        finally:
-            # Delete TSV in all cases to reclaim space
+
+        if converted:
             try:
                 tsv_path.unlink()
             except OSError:
