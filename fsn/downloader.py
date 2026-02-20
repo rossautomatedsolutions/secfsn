@@ -21,11 +21,35 @@ from secfsn.common.timing import timed
 logger = get_logger("fsn_downloader")
 
 
-def _period_folder(year: int, period: int) -> Path:
+def _quarter_period_folder(year: int, quarter: int) -> Path:
     """
-    Return period folder like DATA_DIR / '2022_1' or '2024_10'.
+    Return quarterly period folder like DATA_DIR / '2022_1'.
     """
-    return DATA_DIR / f"{year}_{period}"
+    return DATA_DIR / f"{year}_{quarter}"
+
+
+def _month_period_folder(year: int, month: int) -> Path:
+    """
+    Return monthly period folder like DATA_DIR / '2024_01'.
+
+    Zero-padding avoids collisions with quarterly folders (e.g. '2024_4').
+    """
+    return DATA_DIR / f"{year}_{month:02d}"
+
+
+def _validate_period_pairs(periods: Iterable[Tuple[int, int]], kind: str) -> list[Tuple[int, int]]:
+    validated: list[Tuple[int, int]] = []
+    for idx, item in enumerate(periods):
+        if not isinstance(item, tuple) or len(item) != 2:
+            raise ValueError(
+                f"Invalid {kind} entry at index {idx}: {item!r}. "
+                "Expected (year, period) tuples."
+            )
+        y, p = item
+        if not isinstance(y, int) or not isinstance(p, int):
+            raise ValueError(f"Invalid {kind} tuple at index {idx}: {item!r}. Expected ints.")
+        validated.append((y, p))
+    return validated
 
 
 def _quarter_zip_name(year: int, quarter: int) -> str:
@@ -52,7 +76,7 @@ def download_and_extract_quarter(year: int, quarter: int, overwrite: bool = Fals
     Download and extract a quarterly FSN zip into:
         DATA_DIR / f'{year}_{quarter}' / 'source'
     """
-    period_dir = _period_folder(year, quarter)
+    period_dir = _quarter_period_folder(year, quarter)
     source_dir = period_dir / "source"
     source_dir.mkdir(parents=True, exist_ok=True)
 
@@ -88,9 +112,9 @@ def download_and_extract_quarter(year: int, quarter: int, overwrite: bool = Fals
 def download_and_extract_month(year: int, month: int, overwrite: bool = False) -> Path:
     """
     Download and extract a monthly FSN zip into:
-        DATA_DIR / f'{year}_{month}' / 'source'
+        DATA_DIR / f'{year}_{month:02d}' / 'source'
     """
-    period_dir = _period_folder(year, month)
+    period_dir = _month_period_folder(year, month)
     source_dir = period_dir / "source"
     source_dir.mkdir(parents=True, exist_ok=True)
 
@@ -133,8 +157,8 @@ def download_and_extract_all_fsn(
 
     Returns a list of period directories (DATA_DIR / 'YYYY_P').
     """
-    quarters = list(quarters or FSN_QUARTERS)
-    months = list(months or FSN_MONTHS)
+    quarters = _validate_period_pairs(quarters or FSN_QUARTERS, kind="quarter")
+    months = _validate_period_pairs(months or FSN_MONTHS, kind="month")
 
     period_dirs: List[Path] = []
 

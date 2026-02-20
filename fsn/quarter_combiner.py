@@ -7,6 +7,7 @@ from secfsn.config.core import DATA_DIR
 from secfsn.config.constants import TSV_TABLES
 from secfsn.common.logging_utils import get_logger
 from secfsn.common.timing import timed
+from secfsn.fsn.downloader import _month_period_folder
 
 
 
@@ -42,7 +43,7 @@ def combine_months_into_quarters(
 
     for (year, month) in months:
         q = _quarter_from_month(month)
-        period_dir = base / f"{year}_{month}"
+        period_dir = _month_period_folder(year, month)
         if not period_dir.exists():
             logger.info(f"Monthly period dir not found, skipping: {period_dir}")
             continue
@@ -54,6 +55,12 @@ def combine_months_into_quarters(
             continue
 
         quarter_dir = base / f"{year}_{q}"
+        if quarter_dir in month_dirs:
+            logger.error(
+                f"Quarter directory {quarter_dir} collides with monthly directory name; "
+                "refusing to combine for safety."
+            )
+            continue
         quarter_parquet_dir = quarter_dir / "parquet"
         quarter_parquet_dir.mkdir(parents=True, exist_ok=True)
 
