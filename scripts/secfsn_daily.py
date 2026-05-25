@@ -6,6 +6,8 @@ from datetime import date
 from pathlib import Path
 from typing import Iterable
 
+from requests.exceptions import HTTPError
+
 from secfsn.config.core import DATA_DIR
 from secfsn.fsn.downloader import download_and_extract_month, _month_period_folder
 from secfsn.fsn.tsv_to_parquet import convert_period_tsv_to_parquet
@@ -108,7 +110,17 @@ def run_daily_update() -> bool:
     )
 
     # 1) Download/extract candidate month (idempotent if source already exists)
-    download_and_extract_month(candidate.year, candidate.month, overwrite=False)
+    try:
+        download_and_extract_month(candidate.year, candidate.month, overwrite=False)
+    except HTTPError as exc:
+        status_code = getattr(getattr(exc, "response", None), "status_code", None)
+        if status_code == 404:
+            print(
+                "candidate month not yet published "
+                f"(year={candidate.year}, month={candidate.month:02d}); not advancing state"
+            )
+            return False
+        raise
 
     # 2) Convert candidate month TSV -> parquet and verify canonical monthly output
     convert_period_tsv_to_parquet(month_dir)
